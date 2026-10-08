@@ -1,4 +1,4 @@
-name: Build All Devices Kernel (Matrix Parallel + Release)
+name: Build All lmi Kernel (MIUI only, KSU on/off, Release)
 
 on:
   workflow_dispatch:
@@ -14,25 +14,11 @@ permissions:
 
 jobs:
   build-matrix:
-    name: Build ${{ matrix.device }} | ${{ matrix.ksu && 'KSU' || 'NoKSU' }} (AOSP + MIUI)
+    name: Build lmi | ${{ matrix.ksu && 'KSU' || 'NoKSU' }} (MIUI)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        device:
-          - alioth
-          - apollo
-          - cas
-          - cmi
-          - dagu
-          - elish
-          - enuma
-          - lmi
-          - munch
-          - pipa
-          - psyche
-          - thyme
-          - umi
         ksu:
           - true
           - false
@@ -58,10 +44,11 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.cache/ccache_mikernel
-          key: ${{ runner.os }}-kernel-ccache-${{ matrix.device }}-${{ matrix.ksu && 'ksu' || 'noksu' }}-${{ github.run_id }}
+          key: ${{ runner.os }}-kernel-ccache-lmi-miui-${{ matrix.ksu && 'ksu' || 'noksu' }}-${{ github.run_id }}
           restore-keys: |
-            ${{ runner.os }}-kernel-ccache-${{ matrix.device }}-${{ matrix.ksu && 'ksu' || 'noksu' }}-
-            ${{ runner.os }}-kernel-ccache-${{ matrix.device }}-
+            ${{ runner.os }}-kernel-ccache-lmi-miui-${{ matrix.ksu && 'ksu' || 'noksu' }}-
+            ${{ runner.os }}-kernel-ccache-lmi-miui-
+            ${{ runner.os }}-kernel-ccache-lmi-
             ${{ runner.os }}-kernel-ccache-
 
       - name: Setup zyc-clang 16 Toolchain
@@ -71,24 +58,22 @@ jobs:
           wget -q https://github.com/ZyCromerZ/Clang/releases/download/16.0.6-20260807-release/Clang-16.0.6-20260807.tar.gz
           tar -zxvf Clang-16.0.6-20260807.tar.gz
 
-      - name: Run Build Script
+      - name: Run Build Script (lmi / MIUI)
         run: |
           chmod +x build_kernel.sh
-          
-          ARGS="${{ matrix.device }}"
+          ARGS="lmi miui"
           if [ "${{ matrix.ksu }}" = "true" ]; then
             ARGS="$ARGS ksu"
           fi
-          
           echo "Executing command: ./build_kernel.sh $ARGS"
           ./build_kernel.sh $ARGS
 
       - name: Upload Kernel Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: APTKernel-${{ matrix.device }}-${{ matrix.ksu && 'KSU' || 'NoKSU' }}-${{ github.run_id }}
+          name: APTKernel-lmi-MIUI-${{ matrix.ksu && 'KSU' || 'NoKSU' }}-${{ github.run_id }}
           path: APTKernel_*.zip
-          compression-level: 0 # 内核刷机包本身已是 zip 格式，无需二次压缩
+          compression-level: 0
 
   release:
     name: Publish GitHub Release
@@ -119,18 +104,16 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.vars.outputs.TAG_NAME }}
-          name: "APTKernel Build - ${{ steps.vars.outputs.BUILD_DATE }} (${{ steps.vars.outputs.SHA_SHORT }})"
+          name: "APTKernel (lmi / MIUI) - ${{ steps.vars.outputs.BUILD_DATE }} (${{ steps.vars.outputs.SHA_SHORT }})"
           body: |
-            ## 自动构建内核发布 / Automated Kernel Release
-            
+            ## lmi (Redmi K30 Pro) MIUI 内核发布 / Kernel Release
+
             - **构建日期 / Build Date:** ${{ steps.vars.outputs.BUILD_DATE }}
             - **提交哈希 / Commit SHA:** `${{ steps.vars.outputs.SHA_SHORT }}`
-            - **支持设备 / Supported Devices:** `alioth, apollo, cas, cmi, dagu, elish, enuma, lmi, munch, pipa, psyche, thyme, umi`
-            
+            - **设备 / Device:** `lmi`
+            - **系统 / OS:** `MIUI`
+
             ---
-            ### 刷机包分类指南 / Flashable ZIP Instructions:
-            - **MIUI**: 适用于原厂 MIUI / HyperOS 或基于 MIUI 修改的第三方 ROM。
-            - **AOSP**: 适用于 LineageOS 等类原生 AOSP ROM。
             - **ReSukiSU-SuSFS**: 集成 ReSukiSU 与 SuSFS。
             - **NoKernelSU**: 原版纯净内核，支持自行使用 Magisk 或 APatch 刷入。
           files: all_kernels/*.zip

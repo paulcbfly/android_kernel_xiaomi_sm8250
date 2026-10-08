@@ -81,18 +81,8 @@ if [ "$ENABLE_KSU" -eq 1 ]; then
 fi
 
 # ==========================================
-# Baseband-guard Setup
+# Baseband-guard REMOVED (bbguard disabled per user request)
 # ==========================================
-echo "==========================================="
-echo " [*] Initializing Baseband-guard Setup"
-echo "==========================================="
-echo "[*] Downloading and running Baseband-guard remote setup script..."
-wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-
-echo "[*] Patching security/Kconfig for baseband_guard..."
-sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
-echo "[+] Baseband-guard setup finished."
-echo "==========================================="
 
 # ==========================================
 # AnyKernel3 Setup
@@ -200,9 +190,7 @@ build_target() {
     # Configuration tweaks
     # ----------------------------------------------------
     
-    # 1. Baseband-guard configuration (Always applied)
-    echo "[*] Injecting Baseband-guard configuration..."
-    scripts/config --file "${OUT_DIR}/.config" -e BBG
+    # 1. Baseband-guard configuration REMOVED (BBG not injected)
 
     # 2. KernelSU configurations
     if [ "$ENABLE_KSU" -eq 1 ]; then
@@ -259,7 +247,7 @@ build_target() {
             -e REKERNEL_NETWORK
     fi
 
-    # We always need to re-evaluate dependencies because BBG is injected unconditionally
+    # Re-evaluate dependencies after config injection (KSU / OS specific tweaks)
     echo "[*] Updating config (make olddefconfig)..."
     make "${MAKE_OPTS[@]}" olddefconfig
 
