@@ -76,7 +76,7 @@ if [ "$ENABLE_KSU" -eq 1 ]; then
     echo " [*] Initializing KernelSU (ReSukiSU) Setup"
     echo "==========================================="
     echo "[*] Downloading and running ReSukiSU remote setup script..."
-    curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
+    curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash -s v4.2.0-rc3
     echo "[+] KernelSU setup finished."
 fi
 
@@ -284,7 +284,7 @@ build_target() {
         # 确定 ZIP 文件名
         local KSU_ZIP_STR="NoKernelSU"
         if [ "$ENABLE_KSU" -eq 1 ]; then
-            KSU_ZIP_STR="ReSukiSU-SuSFS"
+            KSU_ZIP_STR="BakaSU-SuSFS"
         fi
         local GIT_COMMIT_ID=$(git rev-parse --short=8 HEAD 2>/dev/null || echo "unknown")
         local OS_UPPER=$(echo "$OS_TYPE" | tr '[:lower:]' '[:upper:]')
